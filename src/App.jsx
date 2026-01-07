@@ -292,19 +292,18 @@ export default function App() {
             </button>
           ) : (
             <div>
-              {/* Instagram 风格的照片流 */}
-              <div className="columns-2 md:columns-3 gap-2 space-y-2">
+              {/* Instagram 风格的照片流 - 使用 Grid 布局 */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {galleryPhotos.map((photo, index) => (
                   <div 
                     key={photo} 
-                    className="break-inside-avoid relative group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow"
-                    style={{ animationDelay: `${index * 50}ms` }}
+                    className="relative group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow aspect-square"
                   >
                     <img
                       src={`/img/pics/${photo}`}
                       alt={`小栗子的照片 ${index + 1}`}
                       loading="lazy"
-                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     {/* 悬停遮罩 */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
