@@ -264,7 +264,7 @@ export default function App() {
                 </div>
                 <div>
                   <p className="text-xs text-amber-300 uppercase">Location</p>
-                  <p className="font-bold">甜蜜温馨大酒店 · 宴会厅</p>
+                  <p className="font-bold">常发广场同庆楼 · 黄山B厅</p>
                 </div>
               </div>
             </div>
