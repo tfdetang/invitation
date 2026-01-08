@@ -128,9 +128,12 @@ export default function App() {
       <div className="max-w-md mx-auto bg-white min-h-screen shadow-2xl relative">
 
         {/* 封面 - 固定背景 */}
-        <section className={`fixed inset-0 max-w-md mx-auto flex flex-col items-center justify-center bg-gradient-to-b from-orange-100 to-amber-50 p-6 text-center transition-opacity duration-500 ${
-          currentSlide > 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'
-        }`}>
+        <section 
+          className={`fixed inset-0 max-w-md mx-auto flex flex-col items-center justify-center bg-gradient-to-b from-orange-100 to-amber-50 p-6 text-center transition-opacity duration-500 ${
+            currentSlide > 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
+          style={{ zIndex: 5 }}
+        >
 
           {/* 装饰背景圆 */}
           <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-orange-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
@@ -224,12 +227,11 @@ export default function App() {
           <div
             key={index}
             className={`fixed inset-x-0 max-w-md mx-auto transition-all duration-800 ease-out ${
-              currentSlide > index ? 
-                `z-${10 + index} translate-y-0` : 
-                `z-${10 + index} translate-y-full`
+              currentSlide >= index + 1 ? 'translate-y-0' : 'translate-y-full'
             }`}
             style={{
-              transitionDelay: currentSlide > index ? `${index * 100}ms` : '0ms'
+              zIndex: 10 + index,
+              transitionDelay: currentSlide >= index + 1 ? `${index * 100}ms` : '0ms'
             }}
           >
             <div className="min-h-screen flex items-center justify-center p-6 bg-white/95 backdrop-blur-sm">
@@ -267,10 +269,9 @@ export default function App() {
         {/* 邀请详情卡片 */}
         <div
           className={`fixed inset-x-0 max-w-md mx-auto transition-all duration-800 ease-out ${
-            currentSlide === totalSlides - 1 ? 
-              'z-30 translate-y-0' : 
-              'z-30 translate-y-full'
+            currentSlide === totalSlides - 1 ? 'translate-y-0' : 'translate-y-full'
           }`}
+          style={{ zIndex: 30 }}
         >
           <div className="min-h-screen bg-gradient-to-b from-amber-900 to-amber-950 text-amber-50 flex items-center justify-center p-8">
             <div className="text-center w-full">
