@@ -6,6 +6,7 @@ export default function App() {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
+  const [visibleMilestones, setVisibleMilestones] = useState([]);
 
   // 所有照片列表
   const galleryPhotos = [
@@ -43,6 +44,29 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [activeTab]);
+
+  // Intersection Observer 监测里程碑卡片进入视口
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = parseInt(entry.target.dataset.index);
+            setVisibleMilestones((prev) => [...new Set([...prev, index])]);
+          }
+        });
+      },
+      {
+        threshold: 0.2,
+        rootMargin: '0px 0px -50px 0px'
+      }
+    );
+
+    const cards = document.querySelectorAll('.milestone-card');
+    cards.forEach((card) => observer.observe(card));
+
+    return () => observer.disconnect();
+  }, []);
 
   const toggleMusic = () => {
     setMusicPlaying(!musicPlaying);
@@ -145,6 +169,12 @@ export default function App() {
               这颗小栗子已经"香甜软糯"<br />
               <span className="font-bold text-amber-900">100天啦！</span>
             </p>
+                key={index} 
+                className={`milestone-card flex gap-4 group polaroid-hidden ${
+                  visibleMilestones.includes(index) ? `polaroid-visible polaroid-delay-${index}` : ''
+                }`}
+                data-index={index}
+              
 
             <button
               onClick={() => document.getElementById('gallery').scrollIntoView({ behavior: 'smooth' })}
