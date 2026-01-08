@@ -169,12 +169,6 @@ export default function App() {
               这颗小栗子已经"香甜软糯"<br />
               <span className="font-bold text-amber-900">100天啦！</span>
             </p>
-                key={index} 
-                className={`milestone-card flex gap-4 group polaroid-hidden ${
-                  visibleMilestones.includes(index) ? `polaroid-visible polaroid-delay-${index}` : ''
-                }`}
-                data-index={index}
-              
 
             <button
               onClick={() => document.getElementById('gallery').scrollIntoView({ behavior: 'smooth' })}
@@ -197,7 +191,13 @@ export default function App() {
 
           <div className="space-y-12">
             {milestones.map((item, index) => (
-              <div key={index} className="flex gap-4 group">
+              <div 
+                key={index} 
+                className={`milestone-card flex gap-4 group polaroid-hidden ${
+                  visibleMilestones.includes(index) ? `polaroid-visible polaroid-delay-${index}` : ''
+                }`}
+                data-index={index}
+              >
                 {/* 左侧时间轴 */}
                 <div className="flex flex-col items-center">
                   <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl shadow-inner group-hover:bg-amber-100 transition-colors">
