@@ -21,14 +21,8 @@ export default defineConfig({
         }
       }
     },
-    // 压缩配置
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    },
+    // 压缩配置 - rolldown-vite 使用内置压缩
+    minify: true,
     // chunk 大小警告限制
     chunkSizeWarningLimit: 1000,
     // 启用 CSS 代码分割
