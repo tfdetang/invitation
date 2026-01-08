@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Camera, Calendar, MapPin, Gift, Music, Heart, Sparkles, Smile, Star, ArrowDown } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('cover');
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [musicPlaying, setMusicPlaying] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
-  const [visibleMilestones, setVisibleMilestones] = useState([]);
+  const [isScrolling, setIsScrolling] = useState(false);
 
   // 所有照片列表
   const galleryPhotos = [
@@ -36,46 +35,76 @@ export default function App() {
     { day: 100, title: "熟透啦！", desc: "解锁技能：吃手手 & 迷人微笑", icon: "🌰", image: "/img/吃小手.jpeg" }
   ];
 
-  // 简单的页面切换动画效果
-  useEffect(() => {
-    if (activeTab === 'invite') {
-      setShowConfetti(true);
-      const timer = setTimeout(() => setShowConfetti(false), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [activeTab]);
+  const totalSlides = 1 + milestones.length + 1; // 封面 + 3张照片 + 邀请函
 
-  // Intersection Observer 监测里程碑卡片进入视口
+  // 处理滚轮和触摸滑动
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const index = parseInt(entry.target.dataset.index);
-            setVisibleMilestones((prev) => [...new Set([...prev, index])]);
-          }
-        });
-      },
-      {
-        threshold: 0.2,
-        rootMargin: '0px 0px -50px 0px'
+    let touchStart = 0;
+    let touchEnd = 0;
+
+    const handleWheel = (e) => {
+      if (isScrolling) return;
+      
+      e.preventDefault();
+      setIsScrolling(true);
+
+      if (e.deltaY > 0 && currentSlide < totalSlides - 1) {
+        // 向下滚动
+        setCurrentSlide(prev => prev + 1);
+      } else if (e.deltaY < 0 && currentSlide > 0) {
+        // 向上滚动
+        setCurrentSlide(prev => prev - 1);
       }
-    );
 
-    const cards = document.querySelectorAll('.milestone-card');
-    cards.forEach((card) => observer.observe(card));
+      setTimeout(() => setIsScrolling(false), 800);
+    };
 
-    return () => observer.disconnect();
-  }, []);
+    const handleTouchStart = (e) => {
+      touchStart = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e) => {
+      touchEnd = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = () => {
+      if (isScrolling) return;
+      
+      const distance = touchStart - touchEnd;
+      if (Math.abs(distance) > 50) {
+        setIsScrolling(true);
+        
+        if (distance > 0 && currentSlide < totalSlides - 1) {
+          setCurrentSlide(prev => prev + 1);
+        } else if (distance < 0 && currentSlide > 0) {
+          setCurrentSlide(prev => prev - 1);
+        }
+
+        setTimeout(() => setIsScrolling(false), 800);
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [currentSlide, isScrolling, totalSlides]);
 
   const toggleMusic = () => {
     setMusicPlaying(!musicPlaying);
   };
 
   return (
-    <div className="min-h-screen bg-amber-50 font-sans text-amber-900 selection:bg-amber-200 overflow-x-hidden relative">
+    <div className="min-h-screen bg-amber-50 font-sans text-amber-900 selection:bg-amber-200 overflow-hidden relative">
 
-      {/* 音乐播放按钮 (模拟) */}
+      {/* 音乐播放按钮 */}
       <button
         onClick={toggleMusic}
         className={`fixed top-4 right-4 z-50 p-3 rounded-full shadow-lg transition-all duration-700 ${musicPlaying ? 'bg-amber-500 text-white rotate-180' : 'bg-white text-amber-500'}`}
@@ -83,11 +112,25 @@ export default function App() {
         <Music size={20} className={musicPlaying ? "animate-pulse" : ""} />
       </button>
 
-      {/* 这是一个长页面结构，模拟手机端滑动的体验 */}
-      <div className="max-w-md mx-auto bg-white min-h-screen shadow-2xl relative pb-20">
+      {/* 进度指示器 */}
+      <div className="fixed right-6 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-2">
+        {[...Array(totalSlides)].map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrentSlide(i)}
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+              i === currentSlide ? 'bg-amber-600 h-8' : 'bg-amber-300'
+            }`}
+          />
+        ))}
+      </div>
 
-        {/* --- 第一部分：可爱谐音梗封面 --- */}
-        <section className="relative h-screen flex flex-col items-center justify-center bg-gradient-to-b from-orange-100 to-amber-50 p-6 text-center overflow-hidden">
+      <div className="max-w-md mx-auto bg-white min-h-screen shadow-2xl relative">
+
+        {/* 封面 - 固定背景 */}
+        <section className={`fixed inset-0 max-w-md mx-auto flex flex-col items-center justify-center bg-gradient-to-b from-orange-100 to-amber-50 p-6 text-center transition-opacity duration-500 ${
+          currentSlide > 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}>
 
           {/* 装饰背景圆 */}
           <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-orange-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
@@ -170,158 +213,124 @@ export default function App() {
               <span className="font-bold text-amber-900">100天啦！</span>
             </p>
 
-            <button
-              onClick={() => document.getElementById('gallery').scrollIntoView({ behavior: 'smooth' })}
-              className="animate-bounce mt-4 text-amber-400"
-            >
+            <div className="animate-bounce mt-4 text-amber-400">
               <ArrowDown size={32} />
-            </button>
+            </div>
           </div>
         </section>
 
-        {/* --- 第二部分：极简成长记录 (Magazine Style) --- */}
-        <section id="gallery" className="py-16 px-6 bg-white">
-          <div className="mb-12 border-b-2 border-black/5 pb-4">
-            <h3 className="text-3xl font-black text-gray-800 tracking-tighter">成长升级！</h3>
-            <div className="flex justify-between items-end mt-2">
-              <span className="text-gray-400 text-sm font-mono">地球观察日志</span>
-              <span className="text-4xl font-serif italic text-amber-600">100 <span className="text-base not-italic text-gray-400 font-sans">天</span></span>
-            </div>
-          </div>
-
-          <div className="space-y-12">
-            {milestones.map((item, index) => (
-              <div 
-                key={index} 
-                className={`milestone-card flex gap-4 group polaroid-hidden ${
-                  visibleMilestones.includes(index) ? `polaroid-visible polaroid-delay-${index}` : ''
-                }`}
-                data-index={index}
-              >
-                {/* 左侧时间轴 */}
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl shadow-inner group-hover:bg-amber-100 transition-colors">
-                    {item.icon}
+        {/* 拍立得照片卡片层 */}
+        {milestones.map((item, index) => (
+          <div
+            key={index}
+            className={`fixed inset-x-0 max-w-md mx-auto transition-all duration-800 ease-out ${
+              currentSlide > index ? 
+                `z-${10 + index} translate-y-0` : 
+                `z-${10 + index} translate-y-full`
+            }`}
+            style={{
+              transitionDelay: currentSlide > index ? `${index * 100}ms` : '0ms'
+            }}
+          >
+            <div className="min-h-screen flex items-center justify-center p-6 bg-white/95 backdrop-blur-sm">
+              <div className="w-full max-w-sm">
+                {/* 拍立得样式卡片 */}
+                <div className="bg-white rounded-lg shadow-2xl p-4 transform hover:scale-105 transition-transform">
+                  {/* 照片区域 */}
+                  <div className="aspect-square bg-gray-100 rounded overflow-hidden mb-4 relative">
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  {index !== milestones.length - 1 && <div className="w-0.5 h-full bg-gray-100 my-2"></div>}
-                </div>
-
-                {/* 右侧内容卡片 */}
-                <div className="flex-1 pb-8">
-                  <div className="aspect-[4/3] bg-gray-100 rounded-xl mb-4 overflow-hidden relative shadow-sm hover:shadow-md transition-shadow">
-                    {item.image ? (
-                      <img 
-                        src={item.image} 
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      /* 占位图标 */
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-300">
-                        <div className="text-center">
-                          <Camera size={32} className="mx-auto mb-2 opacity-50" />
-                          <span className="text-xs font-mono uppercase tracking-widest">Photo Day {item.day}</span>
-                        </div>
+                  
+                  {/* 文字区域 - 拍立得白边 */}
+                  <div className="p-4 bg-white">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-2xl">
+                        {item.icon}
                       </div>
-                    )}
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-400">Day {item.day}</div>
+                        <h3 className="text-xl font-bold text-gray-800">{item.title}</h3>
+                      </div>
+                    </div>
+                    <p className="text-gray-600 text-sm font-mono">{item.desc}</p>
                   </div>
-                  <h4 className="font-bold text-lg text-gray-800">{item.title}</h4>
-                  <p className="text-gray-500 text-sm mt-1 font-mono">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 技能卡片 */}
-          <div className="bg-amber-50 p-6 rounded-2xl mt-4 border border-amber-100">
-            <h4 className="text-xs font-bold text-amber-800 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <Star size={14} /> 当前状态
-            </h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-3 rounded-lg text-center shadow-sm">
-                <div className="text-2xl mb-1">💤</div>
-                <div className="text-xs text-gray-500 font-bold">睡眠力</div>
-                <div className="w-full bg-gray-100 h-1.5 mt-2 rounded-full overflow-hidden">
-                  <div className="bg-blue-400 h-full w-[80%]"></div>
-                </div>
-              </div>
-              <div className="bg-white p-3 rounded-lg text-center shadow-sm">
-                <div className="text-2xl mb-1">🥰</div>
-                <div className="text-xs text-gray-500 font-bold">可爱值</div>
-                <div className="w-full bg-gray-100 h-1.5 mt-2 rounded-full overflow-hidden">
-                  <div className="bg-pink-400 h-full w-[100%] animate-pulse"></div>
-                </div>
-              </div>
-              <div className="bg-white p-3 rounded-lg text-center shadow-sm">
-                <div className="text-2xl mb-1">🍼</div>
-                <div className="text-xs text-gray-500 font-bold">奶量</div>
-                <div className="w-full bg-gray-100 h-1.5 mt-2 rounded-full overflow-hidden">
-                  <div className="bg-orange-400 h-full w-[100%]"></div>
-                </div>
-              </div>
-              <div className="bg-white p-3 rounded-lg text-center shadow-sm">
-                <div className="text-2xl mb-1">💪</div>
-                <div className="text-xs text-gray-500 font-bold">抬头</div>
-                <div className="w-full bg-gray-100 h-1.5 mt-2 rounded-full overflow-hidden">
-                  <div className="bg-green-400 h-full w-[70%]"></div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        ))}
 
-        {/* --- 第三部分：邀请详情 (Action) --- */}
-        <section className="bg-amber-900 text-amber-50 py-16 px-8 rounded-t-[3rem] -mt-10 relative z-10">
-          <div className="text-center">
-            <Gift size={40} className="mx-auto mb-6 text-amber-300 animate-bounce" />
-            <h2 className="text-2xl font-bold mb-2">百日尝鲜大会</h2>
-            <p className="text-amber-200/80 text-sm mb-8">来见证我这颗"大栗子"的里程碑时刻！</p>
+        {/* 邀请详情卡片 */}
+        <div
+          className={`fixed inset-x-0 max-w-md mx-auto transition-all duration-800 ease-out ${
+            currentSlide === totalSlides - 1 ? 
+              'z-30 translate-y-0' : 
+              'z-30 translate-y-full'
+          }`}
+        >
+          <div className="min-h-screen bg-gradient-to-b from-amber-900 to-amber-950 text-amber-50 flex items-center justify-center p-8">
+            <div className="text-center w-full">
+              <Gift size={40} className="mx-auto mb-6 text-amber-300" />
+              
+              <h2 className="text-3xl font-black mb-4">诚邀您的光临</h2>
+              <p className="text-amber-200 mb-8 leading-relaxed">
+                我们诚挚地邀请您<br />
+                一起见证小栗子成长的美好时刻
+              </p>
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 text-left space-y-4 border border-white/10">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-amber-800 flex items-center justify-center text-amber-300">
-                  <Calendar size={20} />
+              <div className="space-y-6 max-w-sm mx-auto">
+                <div className="flex items-start gap-4 bg-amber-800/50 p-4 rounded-xl">
+                  <div className="w-12 h-12 bg-amber-700 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Calendar size={20} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs text-amber-300 uppercase">Time</p>
+                    <p className="font-bold">2026年1月18日 12:00</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-amber-300 uppercase">Time</p>
-                  <p className="font-bold">2026年1月31日 (周六)</p>
+
+                <div className="flex items-start gap-4 bg-amber-800/50 p-4 rounded-xl">
+                  <div className="w-12 h-12 bg-amber-700 rounded-full flex items-center justify-center flex-shrink-0">
+                    <MapPin size={20} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs text-amber-300 uppercase">Location</p>
+                    <p className="font-bold">常发广场同庆楼 · 黄山B厅</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-amber-800 flex items-center justify-center text-amber-300">
-                  <MapPin size={20} />
-                </div>
-                <div>
-                  <p className="text-xs text-amber-300 uppercase">Location</p>
-                  <p className="font-bold">常发广场同庆楼 · 黄山B厅</p>
-                </div>
-              </div>
+              <p className="mt-8 text-xs text-amber-400/60 font-mono">
+                RSVP by 2026.01.20
+              </p>
+
+              {/* 查看更多照片按钮 */}
+              {!showGallery && (
+                <button
+                  onClick={() => setShowGallery(true)}
+                  className="mt-8 px-8 py-4 bg-amber-100 text-amber-900 font-bold rounded-full shadow-lg transform hover:scale-105 active:scale-95 transition-all flex items-center gap-2 mx-auto"
+                >
+                  <Camera size={20} />
+                  查看更多照片
+                </button>
+              )}
             </div>
-
-            <p className="mt-8 text-xs text-amber-400/60 font-mono">
-              RSVP by 2026.01.20
-            </p>
           </div>
-        </section>
+        </div>
 
-        {/* 照片墙区域 */}
-        <section className="py-16 px-6 bg-gradient-to-b from-white to-amber-50">
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-black text-amber-800 mb-2">👶 小栗子的成长相册</h3>
-            <p className="text-sm text-amber-600">记录每一个珍贵的瞬间</p>
-          </div>
+        {/* 照片墙弹出层 (固定在最顶层) */}
+        {showGallery && (
+          <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+            <div className="py-16 px-6">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-black text-amber-800 mb-2">👶 小栗子的成长相册</h3>
+                <p className="text-sm text-amber-600">记录每一个珍贵的瞬间</p>
+              </div>
 
-          {!showGallery ? (
-            <button
-              onClick={() => setShowGallery(true)}
-              className="mx-auto block px-8 py-4 bg-amber-500 text-white font-bold rounded-full shadow-lg transform hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-            >
-              <Camera size={20} />
-              查看更多照片 ({galleryPhotos.length} 张)
-            </button>
-          ) : (
-            <div>
               {/* Instagram 风格的照片流 - 使用 Grid 布局 */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {galleryPhotos.map((photo, index) => (
@@ -344,18 +353,13 @@ export default function App() {
               {/* 收起按钮 */}
               <button
                 onClick={() => setShowGallery(false)}
-                className="mx-auto mt-8 block px-8 py-3 bg-amber-100 text-amber-800 font-bold rounded-full shadow-md hover:bg-amber-200 transition-colors"
+                className="mx-auto mt-8 block px-8 py-3 bg-amber-500 text-white font-bold rounded-full shadow-md hover:bg-amber-600 transition-colors"
               >
-                收起照片
+                关闭相册
               </button>
             </div>
-          )}
-        </section>
-
-        {/* 底部版权风格 */}
-        <footer className="bg-amber-950 py-6 text-center text-amber-800/40 text-[10px] font-mono uppercase tracking-widest">
-          Made with Love for Lizi
-        </footer>
+          </div>
+        )}
 
       </div>
     </div>
