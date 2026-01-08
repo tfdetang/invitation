@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: './', // 使用相对路径，适配腾讯云 CloudBase
+  base: '/', // 使用根路径
   build: {
     // 代码分割
     rollupOptions: {
